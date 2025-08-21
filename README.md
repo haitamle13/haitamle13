@@ -1,334 +1,245 @@
-"""
-TaskMaster Pro - Système Avancé de Gestion de Tâches
-Développé par : Haitam Faddi
-Technologies : Python, SQLite, Logging, Typing
-"""
+<div align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Architects+Daughter&color=2F81F7&size=50&center=true&vCenter=true&width=600&height=80&lines=Hey+There!+👋;I'm+Haitam+Faddi...;Software+Engineer+🚀;Problem+Solver+🧠" alt="Typing SVG" />
+</div>
 
-import sqlite3
-import json
-import logging
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple
-from enum import Enum
-from dataclasses import dataclass
+<p align="center">
+  <img src="https://i.imgur.com/dBaSKWF.gif" height="20" width="100%">
+</p>
 
-# Configuration du logging professionnel
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('taskmaster.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger('TaskMaster')
+<h1 align="center"> Welcome to My GitHub Profile! <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="30px"/> </h1>
 
-class Priority(Enum):
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    URGENT = 4
+<p align="center">
+  <a href="https://github.com/HaitamFaddi">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&duration=4000&pause=1000&color=36BCF7FF&center=true&vCenter=true&width=600&height=50&lines=Software+Engineer;Full-Stack+Developer;Python+%26+C%2B%2B+Specialist;Always+learning+new+things" alt="Typing SVG" />
+  </a>
+</p>
 
-class Status(Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+<div align="center">
+  <img src="https://media.giphy.com/media/qgQUggAC3Pfv687qPC/giphy.gif" alt="Coding Animation" width="600">
+</div>
 
-@dataclass
-class Task:
-    id: Optional[int]
-    title: str
-    description: str
-    priority: Priority
-    status: Status
-    due_date: datetime
-    created_at: datetime
-    updated_at: datetime
-    tags: List[str]
-    assigned_to: Optional[str]
-    
-    def to_dict(self) -> Dict:
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'priority': self.priority.name,
-            'status': self.status.value,
-            'due_date': self.due_date.isoformat(),
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'tags': self.tags,
-            'assigned_to': self.assigned_to
-        }
+<div align="center">
+  <img src="https://komarev.com/ghpvc/?username=HaitamFaddi&style=flat-square&color=blue" alt="Profile Views"/>
+</div>
 
-class TaskManager:
-    """Système professionnel de gestion de tâches avec persistance des données"""
-    
-    def __init__(self, db_path: str = 'taskmaster.db'):
-        self.db_path = db_path
-        self._init_database()
-        logger.info("TaskManager initialisé avec succès")
-    
-    def _init_database(self) -> None:
-        """Initialisation de la base de données avec schéma optimisé"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Table des tâches
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS tasks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT NOT NULL CHECK(length(title) > 0),
-                    description TEXT,
-                    priority INTEGER NOT NULL CHECK(priority BETWEEN 1 AND 4),
-                    status TEXT NOT NULL,
-                    due_date TIMESTAMP NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    tags TEXT DEFAULT '[]',
-                    assigned_to TEXT,
-                    completed_at TIMESTAMP NULL
-                )
-            ''')
-            
-            # Index pour les performances
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_status ON tasks(status)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_priority ON tasks(priority)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_due_date ON tasks(due_date)')
-            
-            conn.commit()
-    
-    def create_task(self, title: str, description: str, priority: Priority, 
-                   due_date: datetime, tags: List[str] = None, assigned_to: str = None) -> Task:
-        """Crée une nouvelle tâche avec validation des données"""
-        if not title or len(title.strip()) == 0:
-            raise ValueError("Le titre de la tâche ne peut pas être vide")
-        
-        if due_date < datetime.now():
-            raise ValueError("La date d'échéance ne peut pas être dans le passé")
-        
-        tags = tags or []
-        current_time = datetime.now()
-        
-        task = Task(
-            id=None,
-            title=title.strip(),
-            description=description.strip(),
-            priority=priority,
-            status=Status.PENDING,
-            due_date=due_date,
-            created_at=current_time,
-            updated_at=current_time,
-            tags=tags,
-            assigned_to=assigned_to
-        )
-        
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO tasks (title, description, priority, status, due_date, tags, assigned_to)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    task.title, 
-                    task.description, 
-                    task.priority.value, 
-                    task.status.value,
-                    task.due_date.isoformat(),
-                    json.dumps(task.tags),
-                    task.assigned_to
-                ))
-                task.id = cursor.lastrowid
-                conn.commit()
-            
-            logger.info(f"Tâche créée: '{task.title}' (ID: {task.id})")
-            return task
-            
-        except sqlite3.Error as e:
-            logger.error(f"Erreur lors de la création de la tâche: {e}")
-            raise
-    
-    def get_task(self, task_id: int) -> Optional[Task]:
-        """Récupère une tâche par son ID"""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM tasks WHERE id = ?', (task_id,))
-                row = cursor.fetchone()
-                
-                return self._row_to_task(row) if row else None
-                
-        except sqlite3.Error as e:
-            logger.error(f"Erreur lors de la récupération de la tâche {task_id}: {e}")
-            return None
-    
-    def update_task_status(self, task_id: int, status: Status) -> Optional[Task]:
-        """Met à jour le statut d'une tâche"""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    UPDATE tasks 
-                    SET status = ?, updated_at = ?, completed_at = ?
-                    WHERE id = ?
-                ''', (
-                    status.value,
-                    datetime.now().isoformat(),
-                    datetime.now().isoformat() if status == Status.COMPLETED else None,
-                    task_id
-                ))
-                
-                if cursor.rowcount == 0:
-                    return None
-                
-                conn.commit()
-                logger.info(f"Statut de la tâche {task_id} mis à jour: {status.value}")
-                return self.get_task(task_id)
-                
-        except sqlite3.Error as e:
-            logger.error(f"Erreur lors de la mise à jour de la tâche {task_id}: {e}")
-            return None
-    
-    def delete_task(self, task_id: int) -> bool:
-        """Supprime une tâche"""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
-                conn.commit()
-                
-                success = cursor.rowcount > 0
-                if success:
-                    logger.info(f"Tâche {task_id} supprimée avec succès")
-                else:
-                    logger.warning(f"Tâche {task_id} non trouvée pour suppression")
-                
-                return success
-                
-        except sqlite3.Error as e:
-            logger.error(f"Erreur lors de la suppression de la tâche {task_id}: {e}")
-            return False
-    
-    def list_tasks(self, filters: Dict = None) -> List[Task]:
-        """Liste les tâches avec filtres optionnels"""
-        filters = filters or {}
-        query = 'SELECT * FROM tasks WHERE 1=1'
-        params = []
-        
-        if 'status' in filters:
-            query += ' AND status = ?'
-            params.append(filters['status'].value)
-        
-        if 'priority' in filters:
-            query += ' AND priority = ?'
-            params.append(filters['priority'].value)
-        
-        if 'assigned_to' in filters:
-            query += ' AND assigned_to = ?'
-            params.append(filters['assigned_to'])
-        
-        query += ' ORDER BY priority DESC, due_date ASC'
-        
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
-                
-                return [self._row_to_task(row) for row in rows]
-                
-        except sqlite3.Error as e:
-            logger.error(f"Erreur lors de la récupération des tâches: {e}")
-            return []
-    
-    def get_tasks_due_soon(self, days: int = 7) -> List[Task]:
-        """Récupère les tâches dues dans les prochains jours"""
-        due_date = (datetime.now() + timedelta(days=days)).isoformat()
-        
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM tasks 
-                    WHERE due_date <= ? AND status NOT IN (?, ?)
-                    ORDER BY due_date ASC
-                ''', (due_date, Status.COMPLETED.value, Status.CANCELLED.value))
-                
-                rows = cursor.fetchall()
-                return [self._row_to_task(row) for row in rows]
-                
-        except sqlite3.Error as e:
-            logger.error(f"Erreur lors de la récupération des tâches dues: {e}")
-            return []
-    
-    def _row_to_task(self, row: Tuple) -> Task:
-        """Convertit une ligne de base de données en objet Task"""
-        return Task(
-            id=row[0],
-            title=row[1],
-            description=row[2],
-            priority=Priority(row[3]),
-            status=Status(row[4]),
-            due_date=datetime.fromisoformat(row[5]),
-            created_at=datetime.fromisoformat(row[6]),
-            updated_at=datetime.fromisoformat(row[7]),
-            tags=json.loads(row[8]),
-            assigned_to=row[9]
-        )
+<h2 align="center">👨‍💻 About Me</h2>
 
-# Exemple d'utilisation professionnelle
-def demo_systeme_taches():
-    """Démonstration du système de gestion de tâches"""
-    print("🚀 TaskMaster Pro - Démonstration")
-    print("=" * 50)
-    
-    # Initialisation
-    tm = TaskManager()
-    
-    # Création de tâches
-    try:
-        # Tâche urgente
-        tache_urgente = tm.create_task(
-            title="Présentation Client Final",
-            description="Préparer la présentation pour la réunion client importante",
-            priority=Priority.URGENT,
-            due_date=datetime.now() + timedelta(hours=24),
-            tags=["client", "présentation", "important"],
-            assigned_to="Haitam"
-        )
-        
-        # Tâche moyenne
-        tache_medium = tm.create_task(
-            title="Refactorisation Code",
-            description="Nettoyer et optimiser le code du module principal",
-            priority=Priority.MEDIUM,
-            due_date=datetime.now() + timedelta(days=3),
-            tags=["développement", "optimisation"],
-            assigned_to="Développeur"
-        )
-        
-        print("✅ Tâches créées avec succès!")
-        
-        # Liste toutes les tâches
-        print("\n📋 Toutes les tâches:")
-        tasks = tm.list_tasks()
-        for task in tasks:
-            print(f"  • {task.title} ({task.priority.name}) - Échéance: {task.due_date.strftime('%d/%m/%Y')}")
-        
-        # Marquer une tâche comme complétée
-        tm.update_task_status(tache_medium.id, Status.COMPLETED)
-        print(f"\n✅ Tâche '{tache_medium.title}' marquée comme complétée!")
-        
-        # Tâches dues bientôt
-        print("\n⏰ Tâches dues dans les 7 jours:")
-        due_soon = tm.get_tasks_due_soon(7)
-        for task in due_soon:
-            print(f"  • {task.title} - {task.due_date.strftime('%d/%m/%Y')}")
-            
-    except Exception as e:
-        logger.error(f"Erreur lors de la démonstration: {e}")
-        print(f"❌ Erreur: {e}")
+<table align="center">
+  <tr>
+    <td align="center" width="50%">
+      <img src="https://media.giphy.com/media/M9gbBd9nbDrOTu1Mqx/giphy.gif" width="120" alt="Developer GIF">
+      <p>
+        <em> Engineering student at <strong>EMSI Casablanca</strong> (Honoris United Universities).<br>
+        Passionate about software development and creating innovative solutions.</em>
+      </p>
+    </td>
+    <td align="center" width="50%">
+      <h3>💼 Professional Journey</h3>
+      <img src="https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif" width="250" alt="Professional Journey">
+      <ul align="left">
+        <li>🎓 4th year engineering student in <strong>Computer Science</strong></li>
+        <li>💻 Experienced in <strong>Full-Stack Development</strong> and system design</li>
+        <li>🔬 Exploring technologies in <strong>Web Development</strong> and <strong>Software Engineering</strong></li>
+        <li>🌱 Committed to continuous learning and professional growth</li>
+        <li>🤝 Open for collaborations on innovative projects</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-if __name__ == "__main__":
-    demo_systeme_taches()
+<div align="center">
+  <h3>🚀 Key Skills</h3>
+  <img src="https://media.giphy.com/media/iIqmM5tTjmpOB9mpbn/giphy.gif" width="300" alt="Skills Animation">
+</div>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://media3.giphy.com/media/ln7z2eWriiQAllfVcn/200w.webp" width="100"><br><strong>JavaScript</strong>
+    </td>
+    <td align="center">
+      <img src="https://i.giphy.com/media/LMt9638dO8dftAjtco/200.webp" width="100"><br><strong>Python</strong>
+    </td>
+    <td align="center">
+      <img src="https://media.giphy.com/media/KAq5w47R9rmTuvWOWq/giphy.gif" width="100"><br><strong>Django</strong>
+    </td>
+    <td align="center">
+      <img src="https://media.giphy.com/media/IdyAQJVN2kVPNUrojM/200.webp" width="100"><br><strong>C++</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://media.giphy.com/media/kH1DBkPNyZPOk0BxrM/giphy.gif" width="100"><br><strong>Git</strong>
+    </td>
+    <td align="center">
+      <img src="https://media.giphy.com/media/XEDIHHp3i8bVoEdxd7/giphy.gif" width="100"><br><strong>Databases</strong>
+    </td>
+    <td align="center">
+      <img src="https://media.giphy.com/media/dMLmQfCO7lCA2gX3tw/giphy.gif" width="100"><br><strong>Algorithms</strong>
+    </td>
+    <td align="center">
+      <img src="https://media.giphy.com/media/dWesBcTLavkZuG35MI/giphy.gif" width="100"><br><strong>Problem Solving</strong>
+    </td>
+  </tr>
+</table>
+
+<div align="center">
+  <h3>💡 Philosophy</h3>
+  <img src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" width="200" alt="Innovative Thinking GIF">
+  <p><em>"Clean code always looks like it was written by someone who cares."</em></p>
+</div>
+
+<p align="center">
+  <img src="https://i.imgur.com/dBaSKWF.gif" height="20" width="100%">
+</p>
+
+<h2 align="center">🛠️ Technical Proficiencies</h2>
+
+<div align="center">
+  <img src="https://media.giphy.com/media/SWoSkN6DxTszqIKEqv/giphy.gif" alt="Skills GIF" width="500">
+</div>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <h3>Programming Languages</h3>
+      <p align="center">
+        <img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white" alt="C" />
+        <img src="https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" alt="C++" />
+        <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+        <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" />
+        <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
+        <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3" />
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <h3>Frameworks & Libraries</h3>
+      <p align="center">
+        <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django" />
+        <img src="https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap" />
+        <img src="https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white" alt="jQuery" />
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <h3>Databases & Tools</h3>
+      <p align="center">
+        <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
+        <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git" />
+        <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
+      </p>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="https://i.imgur.com/dBaSKWF.gif" height="20" width="100%">
+</p>
+
+<h2 align="center">📊 GitHub Analytics</h2>
+
+<p align="center">
+  <img src="https://github-readme-streak-stats.herokuapp.com/?user=HaitamFaddi&theme=tokyonight&hide_border=true" alt="GitHub Streak" />
+</p>
+
+<p align="center">
+  <img height="180em" src="https://github-readme-stats.vercel.app/api?username=HaitamFaddi&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true&hide_border=true"/>
+  <img height="180em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=HaitamFaddi&layout=compact&langs_count=8&theme=tokyonight&hide_border=true"/>
+</p>
+
+<h2 align="center">🚀 Featured Projects</h2>
+
+<div align="center">
+  <table>
+    <tr>
+      <td width="50%">
+        <h3 align="center">Hospital Management System</h3>
+        <div align="center">
+          <a href="#" target="_blank">
+            <img src="https://media.giphy.com/media/l0HU7JI1m1eEwz7Kw/giphy.gif" width="100%" alt="Hospital Management System"/>
+          </a>
+          <p>
+            <a href="#" target="_blank">
+              <img src="https://img.shields.io/badge/Code-C++-blue?style=flat-square&logo=cplusplus"/>
+            </a>
+          </p>
+          <p><strong>Tech Stack:</strong> C++, Data Structures, Algorithms</p>
+          <p>Advanced hospital service management application with patient tracking and appointment scheduling</p>
+        </div>
+      </td>
+      <td width="50%">
+        <h3 align="center">E-Commerce Platform</h3>
+        <div align="center">
+          <a href="#" target="_blank">
+            <img src="https://media.giphy.com/media/M4NykXxUE0HAcK7UJ6/giphy.gif" width="100%" alt="E-Commerce Platform"/>
+          </a>
+          <p>
+            <a href="#" target="_blank">
+              <img src="https://img.shields.io/badge/Code-Python/Django-blue?style=flat-square&logo=django"/>
+            </a>
+          </p>
+          <p><strong>Tech Stack:</strong> Python, Django, HTML, CSS, JavaScript</p>
+          <p>Complete e-commerce website with user management, shopping cart, and payment processing</p>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <img src="https://i.imgur.com/dBaSKWF.gif" height="20" width="100%">
+</p>
+
+<h2 align="center">🤝 Connect With Me</h2>
+
+<p align="center">
+  <a href="mailto:haitamfaddi07@gmail.com" target="_blank">
+    <img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" />
+  </a>
+  <a href="https://www.linkedin.com/in/yourprofile" target="_blank">
+    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
+  </a>
+  <a href="https://github.com/HaitamFaddi" target="_blank">
+    <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
+</p>
+
+<div align="center">
+  <img src="https://media.giphy.com/media/LnQjpWaON8nhr21vNW/giphy.gif" width="60">
+  <br>
+  <em><b>I'm always open to new opportunities and collaborations.</b> Feel free to reach out!</em>
+</div>
+
+<h2 align="center">💼 Professional Development</h2>
+
+<p align="center">
+  <img src="https://media.giphy.com/media/RbDKaczqWovIugyJmW/giphy.gif" alt="Professional Development GIF" width="400">
+</p>
+
+<p align="center">
+  <em>Committed to continuous growth and excellence in software engineering.</em>
+</p>
+
+<ul align="center" style="list-style-type: none; padding: 0;">
+  <li>🏆 Enhancing skills through challenging projects and coursework</li>
+  <li>📚 Completing certifications in various programming technologies</li>
+  <li>🌟 Focused on developing innovative solutions to real-world problems</li>
+  <li>🔍 Exploring new technologies to improve development practices</li>
+</ul>
+
+<h2 align="center">🌟 Driving Innovation in Technology</h2>
+
+<div align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=24&pause=1000&color=2F81F7&center=true&vCenter=true&random=false&width=600&height=100&lines=✨+Building+Efficient+Solutions+with+Clean+Code+✨;✨+Transforming+Ideas+into+Functional+Software+✨;✨+Committed+to+Excellence+in+Engineering+✨" alt="Typing SVG" />
+</div>
+
+<p align="center">
+  <img src="https://profile-counter.glitch.me/HaitamFaddi/count.svg" alt="Visitor Count" />
+</p>
+
+<div align="center">
+  <img src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" alt="Thank You GIF" width="200" />
+</div>
